@@ -4,6 +4,7 @@ from rest_framework.exceptions import Throttled
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from contact.metrics_service import ContactMetricsService
 from contact.rate_limit import ContactRateLimitService
 from contact.serializers import ContactRequestSerializer
 
@@ -43,3 +44,11 @@ class ContactCreateView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class MetricsView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        return Response(ContactMetricsService.get_metrics(), status=status.HTTP_200_OK)
