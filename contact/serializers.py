@@ -3,12 +3,16 @@ import re
 from rest_framework import serializers
 
 from contact.models import ContactRequest
+from contact.services import ContactRequestService
 
 
 class ContactRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactRequest
         fields = ("name", "phone", "email", "comment")
+
+    def create(self, validated_data: dict) -> ContactRequest:
+        return ContactRequestService.create_contact_request(validated_data)
 
     def validate_name(self, value: str) -> str:
         cleaned_value = value.strip()
