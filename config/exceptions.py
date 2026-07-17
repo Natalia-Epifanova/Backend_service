@@ -8,9 +8,18 @@ logger = logging.getLogger("project.errors")
 
 
 def custom_exception_handler(exc, context):
+    """Преобразует исключения DRF в единый API-ответ."""
+
     response = exception_handler(exc, context)
 
     if response is not None:
+        if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+            wait_seconds = getattr(exc, "wait", None)
+            detail = "Слишком много обращений. Попробуйте позже."
+            if wait_seconds is not None:
+                detail = f"{detail} Повторите попытку через {int(wait_seconds)} сек."
+            response.data = {"detail": detail}
+
         logger.warning(
             "Handled API exception",
             extra={
@@ -32,6 +41,6 @@ def custom_exception_handler(exc, context):
     )
 
     return Response(
-        {"detail": "Internal server error."},
+        {"detail": "Внутренняя ошибка сервера."},
         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )

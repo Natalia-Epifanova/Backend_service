@@ -2,6 +2,8 @@ from django.core.cache import cache
 
 
 class ContactRateLimitService:
+    """Сервис ограничения частоты запросов по IP."""
+
     @staticmethod
     def get_cache_key(ip_address: str) -> str:
         return f"contact-rate-limit:{ip_address or 'unknown'}"

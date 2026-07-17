@@ -17,7 +17,7 @@ class ContactApiTests(APITestCase):
     def setUp(self):
         cache.clear()
         self.contact_payload = {
-            "name": "Anna Ivanova",
+            "name": "Анна Иванова",
             "phone": "+7 (999) 123-45-67",
             "email": "anna@example.com",
             "comment": "Хочу обсудить backend-проект и интеграцию AI.",
@@ -35,13 +35,13 @@ class ContactApiTests(APITestCase):
         mock_analyze_comment.return_value = {
             "sentiment": ContactRequest.SentimentChoices.POSITIVE,
             "category": ContactRequest.CategoryChoices.PROJECT,
-            "summary": "Client wants to discuss a backend project.",
+            "summary": "Клиент хочет обсудить backend-проект.",
         }
 
         response = self.client.post("/api/contact/", self.contact_payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.json()["message"], "Contact request created successfully.")
+        self.assertEqual(response.json()["message"], "Обращение успешно создано.")
         self.assertEqual(response.json()["ai_status"], ContactRequest.AIStatusChoices.SUCCESS)
         self.assertEqual(ContactRequest.objects.count(), 1)
 
@@ -49,7 +49,7 @@ class ContactApiTests(APITestCase):
         self.assertEqual(contact_request.sentiment, ContactRequest.SentimentChoices.POSITIVE)
         self.assertEqual(contact_request.category, ContactRequest.CategoryChoices.PROJECT)
         self.assertEqual(contact_request.ai_status, ContactRequest.AIStatusChoices.SUCCESS)
-        self.assertEqual(contact_request.ai_summary, "Client wants to discuss a backend project.")
+        self.assertEqual(contact_request.ai_summary, "Клиент хочет обсудить backend-проект.")
         mock_send_notifications.assert_called_once()
 
     def test_create_contact_request_validation_error(self):
@@ -67,11 +67,14 @@ class ContactApiTests(APITestCase):
         self.assertIn("phone", response.json())
         self.assertIn("email", response.json())
         self.assertIn("comment", response.json())
+        self.assertEqual(response.json()["name"][0], "Имя должно содержать минимум 2 символа.")
+        self.assertEqual(response.json()["phone"][0], "Телефон должен содержать минимум 10 цифр.")
+        self.assertEqual(response.json()["comment"][0], "Комментарий должен содержать минимум 10 символов.")
 
     @patch("contact.services.EmailNotificationService.send_contact_notifications")
     @patch("contact.services.AIAnalysisService.analyze_comment")
     def test_rate_limit_returns_429_after_limit(self, mock_analyze_comment, mock_send_notifications):
-        mock_analyze_comment.side_effect = ValueError("No AI key configured")
+        mock_analyze_comment.side_effect = ValueError("OPENAI_API_KEY не настроен.")
 
         responses = [
             self.client.post("/api/contact/", self.contact_payload, format="json")
@@ -82,7 +85,10 @@ class ContactApiTests(APITestCase):
         self.assertEqual(responses[1].status_code, status.HTTP_201_CREATED)
         self.assertEqual(responses[2].status_code, status.HTTP_201_CREATED)
         self.assertEqual(responses[3].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-        self.assertIn("Too many contact requests", responses[3].json()["detail"])
+        self.assertEqual(
+            responses[3].json()["detail"],
+            "Слишком много обращений. Попробуйте позже. Повторите попытку через 60 сек.",
+        )
 
     @patch("contact.services.EmailNotificationService.send_contact_notifications")
     @patch("contact.services.AIAnalysisService.analyze_comment")
@@ -91,9 +97,9 @@ class ContactApiTests(APITestCase):
             {
                 "sentiment": ContactRequest.SentimentChoices.POSITIVE,
                 "category": ContactRequest.CategoryChoices.PROJECT,
-                "summary": "Project request.",
+                "summary": "Запрос по проекту.",
             },
-            ValueError("No AI key configured"),
+            ValueError("OPENAI_API_KEY не настроен."),
         ]
 
         self.client.post("/api/contact/", self.contact_payload, format="json")

@@ -10,6 +10,8 @@ from contact.serializers import ContactRequestSerializer
 
 
 class HealthCheckView(APIView):
+    """Проверка доступности сервиса."""
+
     authentication_classes = []
     permission_classes = []
 
@@ -18,6 +20,8 @@ class HealthCheckView(APIView):
 
 
 class ContactCreateView(APIView):
+    """Создание обращения из формы обратной связи."""
+
     authentication_classes = []
     permission_classes = []
 
@@ -30,7 +34,7 @@ class ContactCreateView(APIView):
         )
 
         if not is_allowed:
-            raise Throttled(wait=wait_seconds, detail="Too many contact requests. Please try again later.")
+            raise Throttled(wait=wait_seconds, detail="Слишком много обращений. Попробуйте позже.")
 
         serializer = ContactRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -38,7 +42,7 @@ class ContactCreateView(APIView):
 
         return Response(
             {
-                "message": "Contact request created successfully.",
+                "message": "Обращение успешно создано.",
                 "id": contact_request.id,
                 "ai_status": contact_request.ai_status,
             },
@@ -47,6 +51,8 @@ class ContactCreateView(APIView):
 
 
 class MetricsView(APIView):
+    """Возвращает агрегированную статистику по обращениям."""
+
     authentication_classes = []
     permission_classes = []
 

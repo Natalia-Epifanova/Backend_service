@@ -7,6 +7,8 @@ from contact.models import ContactRequest
 
 
 class AIAnalysisService:
+    """Сервис анализа комментария через AI-провайдера."""
+
     DEFAULT_MODEL = "gpt-4.1-mini"
 
     @classmethod
@@ -15,7 +17,7 @@ class AIAnalysisService:
         model = os.getenv("OPENAI_MODEL", cls.DEFAULT_MODEL)
 
         if not api_key:
-            raise ValueError("OPENAI_API_KEY is not configured.")
+            raise ValueError("OPENAI_API_KEY не настроен.")
 
         client = OpenAI(api_key=api_key)
         response = client.responses.create(

@@ -8,6 +8,8 @@ logger = logging.getLogger("project.errors")
 
 
 class ContactRequestService:
+    """Сервис создания и постобработки обращений."""
+
     @staticmethod
     def create_contact_request(validated_data: dict) -> ContactRequest:
         contact_request = ContactRequest.objects.create(**validated_data)

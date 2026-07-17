@@ -4,6 +4,8 @@ from contact.models import ContactRequest
 
 
 class ContactMetricsService:
+    """Сервис агрегации статистики по обращениям."""
+
     @staticmethod
     def get_metrics() -> dict:
         total_requests = ContactRequest.objects.count()

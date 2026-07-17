@@ -7,6 +7,8 @@ from contact.services import ContactRequestService
 
 
 class ContactRequestSerializer(serializers.ModelSerializer):
+    """Сериализатор для валидации формы обратной связи."""
+
     class Meta:
         model = ContactRequest
         fields = ("name", "phone", "email", "comment")
@@ -18,7 +20,7 @@ class ContactRequestSerializer(serializers.ModelSerializer):
         cleaned_value = value.strip()
 
         if len(cleaned_value) < 2:
-            raise serializers.ValidationError("Name must contain at least 2 characters.")
+            raise serializers.ValidationError("Имя должно содержать минимум 2 символа.")
 
         return cleaned_value
 
@@ -28,13 +30,13 @@ class ContactRequestSerializer(serializers.ModelSerializer):
         digits_only = re.sub(r"\D", "", normalized_value)
 
         if len(digits_only) < 10:
-            raise serializers.ValidationError("Phone number must contain at least 10 digits.")
+            raise serializers.ValidationError("Телефон должен содержать минимум 10 цифр.")
 
         if len(digits_only) > 15:
-            raise serializers.ValidationError("Phone number must contain no more than 15 digits.")
+            raise serializers.ValidationError("Телефон должен содержать не более 15 цифр.")
 
         if normalized_value.count("+") > 1 or ("+" in normalized_value and not normalized_value.startswith("+")):
-            raise serializers.ValidationError("Phone number format is invalid.")
+            raise serializers.ValidationError("Неверный формат телефона.")
 
         return cleaned_value
 
@@ -42,6 +44,6 @@ class ContactRequestSerializer(serializers.ModelSerializer):
         cleaned_value = value.strip()
 
         if len(cleaned_value) < 10:
-            raise serializers.ValidationError("Comment must contain at least 10 characters.")
+            raise serializers.ValidationError("Комментарий должен содержать минимум 10 символов.")
 
         return cleaned_value
