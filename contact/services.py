@@ -1,4 +1,5 @@
 from contact.ai_service import AIAnalysisService
+from contact.email_service import EmailNotificationService
 from contact.models import ContactRequest
 
 
@@ -19,5 +20,10 @@ class ContactRequestService:
             )
         except Exception as exc:
             AIAnalysisService.apply_fallback(contact_request, str(exc))
+
+        try:
+            EmailNotificationService.send_contact_notifications(contact_request)
+        except Exception:
+            pass
 
         return contact_request
