@@ -1,6 +1,10 @@
+import logging
+
 from contact.ai_service import AIAnalysisService
 from contact.email_service import EmailNotificationService
 from contact.models import ContactRequest
+
+logger = logging.getLogger("project.errors")
 
 
 class ContactRequestService:
@@ -23,7 +27,14 @@ class ContactRequestService:
 
         try:
             EmailNotificationService.send_contact_notifications(contact_request)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "Failed to send contact notifications",
+                extra={
+                    "contact_request_id": contact_request.id,
+                    "email": contact_request.email,
+                    "exception": str(exc),
+                },
+            )
 
         return contact_request

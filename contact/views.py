@@ -1,7 +1,10 @@
+from django.conf import settings
 from rest_framework import status
+from rest_framework.exceptions import Throttled
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from contact.rate_limit import ContactRateLimitService
 from contact.serializers import ContactRequestSerializer
 
 
@@ -18,6 +21,16 @@ class ContactCreateView(APIView):
     permission_classes = []
 
     def post(self, request):
+        client_ip = request.META.get("REMOTE_ADDR", "")
+        is_allowed, wait_seconds = ContactRateLimitService.check_request_allowed(
+            ip_address=client_ip,
+            limit=settings.CONTACT_RATE_LIMIT_REQUESTS,
+            window_seconds=settings.CONTACT_RATE_LIMIT_WINDOW_SECONDS,
+        )
+
+        if not is_allowed:
+            raise Throttled(wait=wait_seconds, detail="Too many contact requests. Please try again later.")
+
         serializer = ContactRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         contact_request = serializer.save()

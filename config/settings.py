@@ -1,9 +1,14 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+CACHE_DIR = BASE_DIR / "cache"
+CACHE_DIR.mkdir(exist_ok=True)
 
 load_dotenv()
 
@@ -37,6 +42,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "config.middleware.RequestLogMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -78,6 +84,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -99,6 +106,53 @@ EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() == "true"
 SERVER_EMAIL = os.getenv("SERVER_EMAIL", EMAIL_HOST_USER or "no-reply@example.com")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@example.com")
 OWNER_EMAIL = os.getenv("OWNER_EMAIL", "owner@example.com")
+CONTACT_RATE_LIMIT_REQUESTS = int(os.getenv("CONTACT_RATE_LIMIT_REQUESTS", "5"))
+CONTACT_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("CONTACT_RATE_LIMIT_WINDOW_SECONDS", "3600"))
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": CACHE_DIR,
+    }
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        },
+    },
+    "handlers": {
+        "request_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "requests.log",
+            "formatter": "standard",
+            "encoding": "utf-8",
+        },
+        "error_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "errors.log",
+            "formatter": "standard",
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        "project.requests": {
+            "handlers": ["request_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "project.errors": {
+            "handlers": ["error_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
